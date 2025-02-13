@@ -28,8 +28,9 @@ The requirements for the project are as follows:
 - Algorithm Selection: Let users choose which scheduling algorithm to simulate.
 - Visualization: Create a graphical representation of the scheduling process, such as Gantt charts.
 - Metrics Calculation: Automatically calculate and display key performance metrics (average waiting time, average turnaround time, and response time).
-  **Tools and Technologies:**
-  • Programming Language: `Python`, `Java`, or `C++`
+
+**Tools and Technologies:**
+• Programming Language: `Python`, `Java`, or `C++`
 
 **Implementation Steps:**
 
