@@ -65,16 +65,21 @@ class Priority(ProcessProperty):
         return True
         
 class Process:
-   def __init__(self, arrivalTime: ArrivalTime, burstTime: BurstTime, priority: Priority):
-       self.arrivalTime = arrivalTime
-       self.burstTime = burstTime
-       self.priority = priority  
+   def __init__(self, id: int, arrivalTime: int, burstTime: int, priority: int):
+        self.id = id
+        self.arrivalTime = arrivalTime
+        self.burstTime = burstTime
+        self.timeRemaining = burstTime
+        self.priority = priority  
+        self.idleTime = 0
 
 def initProcess(processId: int):
     unprocessProperties = ProcessProperty.__subclasses__()
     properties = []
 
     for property in unprocessProperties:
-        properties.append(property().requestValue(processId))
+        propIntance = property()
+        propIntance.requestValue(processId)
+        properties.append(propIntance)
     
-    return Process(properties[0], properties[1], properties[2])
+    return Process(processId, properties[0].value, properties[1].value, properties[2].value)

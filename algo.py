@@ -1,12 +1,58 @@
+from collections import deque
 from typing import List
 from process import Process
+from abc import ABC, abstractmethod
 
-class FCFSScheduler:
+class ProcessDispatch:
+    def __init__(self, process: Process, timeQuantum: int):
+        self.process = process
+        self.timeQuantum = timeQuantum
+
+class Scheduler(ABC):
+    @abstractmethod
+    def tryDispatchProcess(self):
+        pass
+
+    @abstractmethod
+    def onProcessorTimeIncrease(self, processorTime: int):
+        pass
+
+    @abstractmethod
+    def hasProcessesLeft(self):
+        pass
+
+    @abstractmethod
+    def hasProcessessInQueue(self):
+        pass
+
+class FCFSScheduler(Scheduler):
     def __init__(self, processes: List[Process]):
-        self.processes = processes
+        self.processes = deque(sorted(processes, key=lambda process: process.arrivalTime))
+        self.q = deque()
+    
+    def onProcessorTimeIncrease(self, processorTime: int):
+        self.passIdleTime()
+        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+            self.q.append(self.processes.popleft())
 
-    def prioritizeProcesses(self):
-        self.processes.sort(key=lambda process: process.arrivalTime)
+    def hasProcessesLeft(self):
+        return len(self.processes) > 0
+    
+    def hasProcessessInQueue(self):
+        return len(self.q) > 0
+    
+    def tryDispatchProcess(self, processorTime: int):
+        if not self.hasProcessessInQueue() or self.q[0].arrivalTime > processorTime:
+            return None
+        process = self.q.popleft()
+        process.timeOfDispatch = processorTime
+        processDispatch = ProcessDispatch(process, process.burstTime)
+        return processDispatch
+    
+    def passIdleTime(self):
+        for process in self.q:
+            process.idleTime += 1
+
 
 
 def displayAlogOptions():
@@ -63,6 +109,8 @@ def tryGetAlgo():
         raise Exception("The value you enter must be within 1 <= val <= 5")
 
 def initAlgo():
-    displayAlogOptions()
-    value = tryGetAlgo()
-    print(value)
+    # displayAlogOptions()
+    # value = tryGetAlgo()
+    # print(value)
+
+    return FCFSScheduler
