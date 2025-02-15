@@ -25,6 +25,7 @@ class Scheduler(ABC):
     @abstractmethod
     def hasProcessessInQueue(self):
         pass
+    
 
 class FCFSScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int):
@@ -60,6 +61,7 @@ class FCFSScheduler(Scheduler):
     def passIdleTime(self):
         for process in self.q:
             process.idleTime += 1
+  
 
 class SPNScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int):
@@ -96,9 +98,58 @@ class SPNScheduler(Scheduler):
     def passIdleTime(self):
         for process in self.q:
             process[1].idleTime += 1
+    
 
 
+class SRTScheduler(Scheduler):
+    def __init__(self, numberOfProcesses: int):
+        self.numberOfProcesses = numberOfProcesses
+        self.processes = deque()
+        self.q = []
+        self.timeQuantum = 1
 
+    def getProcesses(self):
+        displayProcessPropertyInfo()
+
+        for i in range(self.numberOfProcesses):
+            self.processes.append(initProcess(i + 1))
+    
+    def onProcessorTimeIncrease(self, processorTime: int):
+        self.passIdleTime()
+        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+            newProcess = self.processes.popleft()
+            heapq.heappush(self.q, (newProcess.burstTime, newProcess))
+
+    def hasProcessesLeft(self):
+        return len(self.processes) > 0
+    
+    def hasProcessessInQueue(self):
+        return len(self.q) > 0
+    
+    def tryDispatchProcess(self, processorTime: int):
+        if not self.hasProcessessInQueue() or self.q[0][1].arrivalTime > processorTime:
+            return None
+        burstTime, process = heapq.heappop(self.q)
+        process.timeOfDispatch = processorTime
+        processDispatch = ProcessDispatch(process, self.timeQuantum)
+        return processDispatch
+
+    def requeueProcess(self, process: Process):
+        heapq.heappush(self.q, (process.timeRemaining, process))
+    
+    def passIdleTime(self):
+        for process in self.q:
+            process[1].idleTime += 1
+
+    def initTimeQuantum(self):
+        self.timeQuantum = initTimeQuantum()
+
+def initTimeQuantum():
+    value = int(input(f'Enter the time quantum for the scheduler: '))
+    if value <= 0:
+        raise Exception("The time quantum must be greater than 0")
+    return value
+    
 
 def displayAlgoOptions():
     info = """
@@ -168,7 +219,8 @@ def tryGetAlgo():
 
 algoOptions = [
     FCFSScheduler,
-    SPNScheduler
+    SPNScheduler,
+    SRTScheduler
 ]
 
 def initAlgo():

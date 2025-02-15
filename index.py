@@ -2,24 +2,28 @@ from algo import initAlgo
 from processor import Processor
 
 def main():
-    numberOfProcesses = int(input("Enter the nubmer of processes: "))
+    numberOfProcesses = int(input("Enter the number of processes: "))
     if numberOfProcesses <= 0:
         print("Number of processes must be greater than 0")
         return
 
-    processes = []
     schedulerAlgo = initAlgo()
 
     scheduler = schedulerAlgo(numberOfProcesses)
 
+    if schedulerAlgo.initTimeQuantum:
+        scheduler.initTimeQuantum()
+
     scheduler.getProcesses()
+
+
+    
 
     processor = Processor(scheduler)
 
     processor.run()
 
-    for process in processes:
-        print(process.__dict__)
+    
     
     
 main()

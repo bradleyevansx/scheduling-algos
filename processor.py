@@ -22,8 +22,10 @@ class Processor:
     
     def executeProcessDispatch(self, processDispatch: ProcessDispatch):
         print("executing process: ", processDispatch.process.id, processDispatch.timeQuantum)
-        while processDispatch.timeQuantum > 0:
+        while processDispatch.timeQuantum > 0 and processDispatch.process.timeRemaining > 0:
             processDispatch.timeQuantum -= 1
             processDispatch.process.timeRemaining -= 1
             self.increaseProcessorTime()
+        if processDispatch.process.timeRemaining > 0:
+            self.scheduler.requeueProcess(processDispatch.process)
 
