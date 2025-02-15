@@ -73,8 +73,10 @@ class Process:
         self.priority = priority  
         self.idleTime = 0
 
-def initProcess(processId: int):
+def initProcess(processId: int, requestPriority: bool = False):
     unprocessProperties = ProcessProperty.__subclasses__()
+    if not requestPriority:
+        unprocessProperties = filter(lambda x: x != Priority, unprocessProperties)
     properties = []
 
     for property in unprocessProperties:
@@ -82,4 +84,4 @@ def initProcess(processId: int):
         propIntance.requestValue(processId)
         properties.append(propIntance)
     
-    return Process(processId, properties[0].value, properties[1].value, properties[2].value)
+    return Process(processId, properties[0].value, properties[1].value, properties[2].value if requestPriority else 1)

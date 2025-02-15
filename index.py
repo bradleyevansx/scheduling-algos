@@ -4,17 +4,16 @@ from processor import Processor
 
 def main():
     numberOfProcesses = int(input("Enter the nubmer of processes: "))
+    if numberOfProcesses <= 0:
+        print("Number of processes must be greater than 0")
+        return
 
     processes = []
-
-    displayProcessPropertyInfo()
-
-    for i in range(numberOfProcesses):
-        processes.append(initProcess(i + 1))
-    
     schedulerAlgo = initAlgo()
 
-    scheduler = schedulerAlgo(processes)
+    scheduler = schedulerAlgo(numberOfProcesses)
+
+    scheduler.getProcesses()
 
     processor = Processor(scheduler)
 

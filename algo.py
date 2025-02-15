@@ -1,6 +1,6 @@
 from collections import deque
 from typing import List
-from process import Process
+from process import Process, displayProcessPropertyInfo, initProcess
 from abc import ABC, abstractmethod
 
 class ProcessDispatch:
@@ -26,9 +26,16 @@ class Scheduler(ABC):
         pass
 
 class FCFSScheduler(Scheduler):
-    def __init__(self, processes: List[Process]):
-        self.processes = deque(sorted(processes, key=lambda process: process.arrivalTime))
+    def __init__(self, numberOfProcesses: int):
+        self.numberOfProcesses = numberOfProcesses
+        self.processes = deque()
         self.q = deque()
+
+    def getProcesses(self):
+        displayProcessPropertyInfo()
+
+        for i in range(self.numberOfProcesses):
+            self.processes.append(initProcess(i + 1))
     
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime()
