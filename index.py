@@ -1,5 +1,4 @@
 from algo import initAlgo
-from process import displayProcessPropertyInfo, initProcess
 from processor import Processor
 
 def main():
@@ -22,6 +21,5 @@ def main():
     for process in processes:
         print(process.__dict__)
     
-    initAlgo()
     
 main()
