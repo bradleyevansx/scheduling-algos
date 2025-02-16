@@ -32,7 +32,7 @@ class Scheduler(ABC):
 class FCFSScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
-        self.processes = deque()
+        self.processes = []
         self.q = deque()
         self.visualizer = visualizer    
 
@@ -41,9 +41,11 @@ class FCFSScheduler(Scheduler):
 
         for i in range(self.numberOfProcesses):
             self.processes.append(initProcess(i + 1))
+        self.processes.sort(key=lambda p: p.arrivalTime)
+        self.processes = deque(self.processes)
     
     def onProcessorTimeIncrease(self, processorTime: int):
-        self.passIdleTime()
+        self.passIdleTime(processorTime - 1)
         while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
             self.q.append(self.processes.popleft())
 
@@ -61,17 +63,17 @@ class FCFSScheduler(Scheduler):
         processDispatch = ProcessDispatch(process, process.burstTime)
         return processDispatch
     
-    def passIdleTime(self):
+    def passIdleTime(self, processorTime: int):
         for process in self.q:
             processId = process.id
-            self.visualizer.trackProcessAction(processId, process.arrivalTime, "W")
+            self.visualizer.trackProcessAction(processId, processorTime, "W")
             process.idleTime += 1
   
 
 class SPNScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int, visualizer: Visualizer): 
         self.numberOfProcesses = numberOfProcesses
-        self.processes = deque()
+        self.processes = []
         self.q = []
         self.visualizer = visualizer
 
@@ -80,9 +82,11 @@ class SPNScheduler(Scheduler):
 
         for i in range(self.numberOfProcesses):
             self.processes.append(initProcess(i + 1))
+        self.processes.sort(key=lambda p: p.arrivalTime)
+        self.processes = deque(self.processes)
     
     def onProcessorTimeIncrease(self, processorTime: int):
-        self.passIdleTime()
+        self.passIdleTime(processorTime - 1)
         while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
             newProcess = self.processes.popleft()
             heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
@@ -101,10 +105,10 @@ class SPNScheduler(Scheduler):
         processDispatch = ProcessDispatch(process, burstTime)
         return processDispatch
     
-    def passIdleTime(self):
+    def passIdleTime(self, processorTime):
         for process in self.q:
             processId = process[2]
-            self.visualizer.trackProcessAction(processId, process[3].arrivalTime, "W")
+            self.visualizer.trackProcessAction(processId, processorTime, "W")
             process[3].idleTime += 1
     
 
@@ -112,7 +116,7 @@ class SPNScheduler(Scheduler):
 class SRTScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
-        self.processes = deque()
+        self.processes = []
         self.q = []
         self.timeQuantum = 1
         self.visualizer = visualizer
@@ -122,9 +126,11 @@ class SRTScheduler(Scheduler):
 
         for i in range(self.numberOfProcesses):
             self.processes.append(initProcess(i + 1))
+        self.processes.sort(key=lambda p: p.arrivalTime)
+        self.processes = deque(self.processes)
     
     def onProcessorTimeIncrease(self, processorTime: int):
-        self.passIdleTime(processorTime)
+        self.passIdleTime(processorTime - 1)
         while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
             newProcess = self.processes.popleft()
             heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
