@@ -4,6 +4,8 @@ from typing import List
 from process import Process, displayProcessPropertyInfo, initProcess
 from abc import ABC, abstractmethod
 
+from visual import Visualizer
+
 class ProcessDispatch:
     def __init__(self, process: Process, timeQuantum: int):
         self.process = process
@@ -28,10 +30,11 @@ class Scheduler(ABC):
     
 
 class FCFSScheduler(Scheduler):
-    def __init__(self, numberOfProcesses: int):
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
         self.processes = deque()
         self.q = deque()
+        self.visualizer = visualizer    
 
     def getProcesses(self):
         displayProcessPropertyInfo()
@@ -60,14 +63,17 @@ class FCFSScheduler(Scheduler):
     
     def passIdleTime(self):
         for process in self.q:
+            processId = process.id
+            self.visualizer.trackProcessAction(processId, process.arrivalTime, "W")
             process.idleTime += 1
   
 
 class SPNScheduler(Scheduler):
-    def __init__(self, numberOfProcesses: int):
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer): 
         self.numberOfProcesses = numberOfProcesses
         self.processes = deque()
         self.q = []
+        self.visualizer = visualizer
 
     def getProcesses(self):
         displayProcessPropertyInfo()
@@ -79,7 +85,7 @@ class SPNScheduler(Scheduler):
         self.passIdleTime()
         while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
             newProcess = self.processes.popleft()
-            heapq.heappush(self.q, (newProcess.burstTime, newProcess))
+            heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
 
     def hasProcessesLeft(self):
         return len(self.processes) > 0
@@ -88,25 +94,28 @@ class SPNScheduler(Scheduler):
         return len(self.q) > 0
     
     def tryDispatchProcess(self, processorTime: int):
-        if not self.hasProcessessInQueue() or self.q[0][1].arrivalTime > processorTime:
+        if not self.hasProcessessInQueue() or self.q[0][3].arrivalTime > processorTime:
             return None
-        burstTime, process = heapq.heappop(self.q)
+        burstTime, _, _, process = heapq.heappop(self.q)
         process.timeOfDispatch = processorTime
         processDispatch = ProcessDispatch(process, burstTime)
         return processDispatch
     
     def passIdleTime(self):
         for process in self.q:
-            process[1].idleTime += 1
+            processId = process[2]
+            self.visualizer.trackProcessAction(processId, process[3].arrivalTime, "W")
+            process[3].idleTime += 1
     
 
 
 class SRTScheduler(Scheduler):
-    def __init__(self, numberOfProcesses: int):
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
         self.processes = deque()
         self.q = []
         self.timeQuantum = 1
+        self.visualizer = visualizer
 
     def getProcesses(self):
         displayProcessPropertyInfo()
@@ -115,10 +124,10 @@ class SRTScheduler(Scheduler):
             self.processes.append(initProcess(i + 1))
     
     def onProcessorTimeIncrease(self, processorTime: int):
-        self.passIdleTime()
+        self.passIdleTime(processorTime)
         while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
             newProcess = self.processes.popleft()
-            heapq.heappush(self.q, (newProcess.burstTime, newProcess))
+            heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
 
     def hasProcessesLeft(self):
         return len(self.processes) > 0
@@ -127,19 +136,21 @@ class SRTScheduler(Scheduler):
         return len(self.q) > 0
     
     def tryDispatchProcess(self, processorTime: int):
-        if not self.hasProcessessInQueue() or self.q[0][1].arrivalTime > processorTime:
+        if not self.hasProcessessInQueue() or self.q[0][3].arrivalTime > processorTime:
             return None
-        burstTime, process = heapq.heappop(self.q)
+        _, _, _, process = heapq.heappop(self.q)
         process.timeOfDispatch = processorTime
         processDispatch = ProcessDispatch(process, self.timeQuantum)
         return processDispatch
 
-    def requeueProcess(self, process: Process):
-        heapq.heappush(self.q, (process.timeRemaining, process))
+    def requeueProcess(self, process: Process, processorTime: int):
+        heapq.heappush(self.q, (process.timeRemaining, processorTime, process.id, process))
     
-    def passIdleTime(self):
+    def passIdleTime(self, processorTime: int):
         for process in self.q:
-            process[1].idleTime += 1
+            processId = process[2]
+            self.visualizer.trackProcessAction(processId, processorTime, "W")
+            process[3].idleTime += 1
 
     def initTimeQuantum(self):
         self.timeQuantum = initTimeQuantum()
