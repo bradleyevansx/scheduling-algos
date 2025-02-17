@@ -161,6 +161,54 @@ class SRTScheduler(Scheduler):
     def initTimeQuantum(self):
         self.timeQuantum = initTimeQuantum()
 
+class RRScheduler(Scheduler):
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
+        self.numberOfProcesses = numberOfProcesses
+        self.processes = []
+        self.q = deque([])
+        self.timeQuantum = 1
+        self.visualizer = visualizer
+
+    def getProcesses(self):
+        displayProcessPropertyInfo()
+
+        for i in range(self.numberOfProcesses):
+            self.processes.append(initProcess(i + 1))
+        self.processes.sort(key=lambda p: p.arrivalTime)
+        self.processes = deque(self.processes)
+    
+    def onProcessorTimeIncrease(self, processorTime: int):
+        self.passIdleTime(processorTime - 1)
+        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+            newProcess = self.processes.popleft()
+            self.q.append(newProcess)
+
+    def hasProcessesLeft(self):
+        return len(self.processes) > 0
+    
+    def hasProcessessInQueue(self):
+        return len(self.q) > 0
+    
+    def tryDispatchProcess(self, processorTime: int):
+        if not self.hasProcessessInQueue() or self.q[0].arrivalTime > processorTime:
+            return None
+        process = self.q.popleft()
+        process.timeOfDispatch = processorTime
+        processDispatch = ProcessDispatch(process, self.timeQuantum)
+        return processDispatch
+
+    def requeueProcess(self, process: Process, processorTime: int):
+        self.q.append(process)
+    
+    def passIdleTime(self, processorTime: int):
+        for process in self.q:
+            processId = process.id
+            self.visualizer.trackProcessAction(processId, processorTime, "W")
+            process.idleTime += 1
+
+    def initTimeQuantum(self):
+        self.timeQuantum = initTimeQuantum()
+
 def initTimeQuantum():
     value = int(input(f'Enter the time quantum for the scheduler: '))
     if value <= 0:
@@ -237,7 +285,8 @@ def tryGetAlgo():
 algoOptions = [
     FCFSScheduler,
     SPNScheduler,
-    SRTScheduler
+    SRTScheduler,
+    RRScheduler
 ]
 
 def initAlgo():
