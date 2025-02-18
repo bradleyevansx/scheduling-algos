@@ -13,6 +13,7 @@ class Processor:
         self.scheduler.onProcessorTimeIncrease(self.processorTime)
     
     def run(self):
+        self.scheduler.enqueueProcesses(self.processorTime)
         while self.scheduler.hasProcessesLeft() or self.scheduler.hasProcessessInQueue():
             processDispatch = self.scheduler.tryDispatchProcess(self.processorTime)
             if processDispatch is None:

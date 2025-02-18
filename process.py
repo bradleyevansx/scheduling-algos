@@ -8,7 +8,7 @@ def displayProcessPropertyInfo():
 
     1. Arrival Time:
        - Description: The time at which the process will arrive in the queue.
-       - Constraints: Integer >= 1
+       - Constraints: Integer >= 0
        - Default Value: 1
 
     2. Burst Time:
@@ -18,8 +18,8 @@ def displayProcessPropertyInfo():
 
     3. Priority:
        - Description: The priority of the process in the queue.
-       - Constraints: Integer value p where 1 <= p <= 5
-       - Default Value: 1 (1 is the lowest priority, 5 is the highest)
+       - Constraints: Integer value p where 1 <= p
+       - Default Value: 1 (1 is the lowest priority)
 
     --------------------------------
     """
@@ -48,7 +48,7 @@ class ProcessProperty(ABC):
 
 class ArrivalTime(ProcessProperty):
     def validateProperty(self, value: str):
-        if len(value) == 0 or not value.isdigit() or int(value) < 1:
+        if len(value) == 0 or not value.isdigit() or int(value) < 0:
             return False
         return True
 
@@ -60,7 +60,7 @@ class BurstTime(ProcessProperty):
 
 class Priority(ProcessProperty):    
     def validateProperty(self, value: str):
-        if len(value) == 0 or not value.isdigit() or int(value) < 1 or int(value) > 5:
+        if len(value) == 0 or not value.isdigit() or int(value) < 1:
             return False
         return True
         
