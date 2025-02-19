@@ -83,5 +83,6 @@ def initProcess(processId: int, requestPriority: bool = False):
         propIntance = property()
         propIntance.requestValue(processId)
         properties.append(propIntance)
+    print("")
     
     return Process(processId, properties[0].value, properties[1].value, properties[2].value if requestPriority else 1)
