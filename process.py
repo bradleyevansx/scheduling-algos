@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import re
 
+
 def displayProcessPropertyInfo():
     info = """
     Process Properties Information:
@@ -31,19 +32,23 @@ class ProcessProperty(ABC):
         if self.validateProperty(value):
             self.value = value
         else:
-            raise Exception('The value you enter must conform to the constraints that you were provided with')
+            raise Exception(
+                "The value you enter must conform to the constraints that you were provided with"
+            )
         self.value = int(value)
-    
+
     @abstractmethod
-    def validateProperty(self, value: str):
+    def validateProperty(self, value: str) -> bool:
         pass
 
     def requestValue(self, processId: int):
-        value = input(f'Enter process {processId}\'s {self.getFormattedName()}: ')
+        value = input(f"Enter process {processId}'s {self.getFormattedName()}: ")
         self.setValue(value)
 
     def getFormattedName(self):
-        return ' '.join([word for word in re.findall('[A-Z][a-z]*', self.__class__.__name__)])
+        return " ".join(
+            [word for word in re.findall("[A-Z][a-z]*", self.__class__.__name__)]
+        )
 
 
 class ArrivalTime(ProcessProperty):
@@ -52,26 +57,30 @@ class ArrivalTime(ProcessProperty):
             return False
         return True
 
+
 class BurstTime(ProcessProperty):
     def validateProperty(self, value: str):
         if len(value) == 0 or not value.isdigit() or int(value) < 1:
             return False
         return True
 
-class Priority(ProcessProperty):    
+
+class Priority(ProcessProperty):
     def validateProperty(self, value: str):
         if len(value) == 0 or not value.isdigit() or int(value) < 1:
             return False
         return True
-        
+
+
 class Process:
-   def __init__(self, id: int, arrivalTime: int, burstTime: int, priority: int):
+    def __init__(self, id: int, arrivalTime: int, burstTime: int, priority: int):
         self.id = id
         self.arrivalTime = arrivalTime
         self.burstTime = burstTime
         self.timeRemaining = burstTime
-        self.priority = priority  
+        self.priority = priority
         self.idleTime = 0
+
 
 def initProcess(processId: int, requestPriority: bool = False):
     unprocessProperties = ProcessProperty.__subclasses__()
@@ -84,5 +93,11 @@ def initProcess(processId: int, requestPriority: bool = False):
         propIntance.requestValue(processId)
         properties.append(propIntance)
     print("")
-    
-    return Process(processId, properties[0].value, properties[1].value, properties[2].value if requestPriority else 1)
+
+    return Process(
+        processId,
+        properties[0].value,
+        properties[1].value,
+        properties[2].value if requestPriority else 1,
+    )
+

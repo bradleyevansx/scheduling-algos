@@ -1,19 +1,21 @@
 from collections import deque
 import heapq
-from typing import List
+from typing import Optional
 from process import Process, displayProcessPropertyInfo, initProcess
 from abc import ABC, abstractmethod
 
 from visual import Visualizer
+
 
 class ProcessDispatch:
     def __init__(self, process: Process, timeQuantum: int):
         self.process = process
         self.timeQuantum = timeQuantum
 
+
 class Scheduler(ABC):
     @abstractmethod
-    def tryDispatchProcess(self):
+    def tryDispatchProcess(self, processorTime: int) -> Optional[ProcessDispatch]:
         pass
 
     @abstractmethod
@@ -21,24 +23,24 @@ class Scheduler(ABC):
         pass
 
     @abstractmethod
-    def hasProcessesLeft(self):
+    def hasProcessesLeft(self) -> bool:
         pass
 
     @abstractmethod
-    def hasProcessessInQueue(self):
+    def hasProcessessInQueue(self) -> bool:
         pass
 
     @abstractmethod
-    def enqueueProcesses(self, processorTime: int):
+    def enqueueProcesses(self, processorTime: int) -> None:
         pass
-    
+
 
 class FCFSScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
         self.processes = []
         self.q = deque()
-        self.visualizer = visualizer    
+        self.visualizer = visualizer
 
     def getProcesses(self):
         displayProcessPropertyInfo()
@@ -49,20 +51,21 @@ class FCFSScheduler(Scheduler):
         self.processes = deque(self.processes)
 
     def enqueueProcesses(self, processorTime: int):
-        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+        while (
+            self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime
+        ):
             self.q.append(self.processes.popleft())
 
-   
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime(processorTime - 1)
         self.enqueueProcesses(processorTime)
 
     def hasProcessesLeft(self):
         return len(self.processes) > 0
-    
+
     def hasProcessessInQueue(self):
         return len(self.q) > 0
-    
+
     def tryDispatchProcess(self, processorTime: int):
         if not self.hasProcessessInQueue() or self.q[0].arrivalTime > processorTime:
             return None
@@ -70,16 +73,16 @@ class FCFSScheduler(Scheduler):
         process.timeOfDispatch = processorTime
         processDispatch = ProcessDispatch(process, process.burstTime)
         return processDispatch
-    
+
     def passIdleTime(self, processorTime: int):
         for process in self.q:
             processId = process.id
             self.visualizer.trackProcessAction(processId, processorTime, "W")
             process.idleTime += 1
-  
+
 
 class SPNScheduler(Scheduler):
-    def __init__(self, numberOfProcesses: int, visualizer: Visualizer): 
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
         self.processes = []
         self.q = []
@@ -92,22 +95,32 @@ class SPNScheduler(Scheduler):
             self.processes.append(initProcess(i + 1))
         self.processes.sort(key=lambda p: p.arrivalTime)
         self.processes = deque(self.processes)
-    
+
     def enqueueProcesses(self, processorTime: int):
-        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+        while (
+            self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime
+        ):
             newProcess = self.processes.popleft()
-            heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
-    
+            heapq.heappush(
+                self.q,
+                (
+                    newProcess.burstTime,
+                    newProcess.arrivalTime,
+                    newProcess.id,
+                    newProcess,
+                ),
+            )
+
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime(processorTime - 1)
         self.enqueueProcesses(processorTime)
-        
+
     def hasProcessesLeft(self):
         return len(self.processes) > 0
-    
+
     def hasProcessessInQueue(self):
         return len(self.q) > 0
-    
+
     def tryDispatchProcess(self, processorTime: int):
         if not self.hasProcessessInQueue() or self.q[0][3].arrivalTime > processorTime:
             return None
@@ -115,13 +128,12 @@ class SPNScheduler(Scheduler):
         process.timeOfDispatch = processorTime
         processDispatch = ProcessDispatch(process, burstTime)
         return processDispatch
-    
+
     def passIdleTime(self, processorTime):
         for process in self.q:
             processId = process[2]
             self.visualizer.trackProcessAction(processId, processorTime, "W")
             process[3].idleTime += 1
-    
 
 
 class SRTScheduler(Scheduler):
@@ -139,22 +151,32 @@ class SRTScheduler(Scheduler):
             self.processes.append(initProcess(i + 1))
         self.processes.sort(key=lambda p: p.arrivalTime)
         self.processes = deque(self.processes)
-    
+
     def enqueueProcesses(self, processorTime: int):
-        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+        while (
+            self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime
+        ):
             newProcess = self.processes.popleft()
-            heapq.heappush(self.q, (newProcess.burstTime, newProcess.arrivalTime, newProcess.id, newProcess))
-    
+            heapq.heappush(
+                self.q,
+                (
+                    newProcess.burstTime,
+                    newProcess.arrivalTime,
+                    newProcess.id,
+                    newProcess,
+                ),
+            )
+
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime(processorTime - 1)
         self.enqueueProcesses(processorTime)
-        
+
     def hasProcessesLeft(self):
         return len(self.processes) > 0
-    
+
     def hasProcessessInQueue(self):
         return len(self.q) > 0
-    
+
     def tryDispatchProcess(self, processorTime: int):
         if not self.hasProcessessInQueue() or self.q[0][3].arrivalTime > processorTime:
             return None
@@ -164,8 +186,10 @@ class SRTScheduler(Scheduler):
         return processDispatch
 
     def requeueProcess(self, process: Process, processorTime: int):
-        heapq.heappush(self.q, (process.timeRemaining, processorTime, process.id, process))
-    
+        heapq.heappush(
+            self.q, (process.timeRemaining, processorTime, process.id, process)
+        )
+
     def passIdleTime(self, processorTime: int):
         for process in self.q:
             processId = process[2]
@@ -174,6 +198,7 @@ class SRTScheduler(Scheduler):
 
     def initTimeQuantum(self):
         self.timeQuantum = initTimeQuantum()
+
 
 class RRScheduler(Scheduler):
     def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
@@ -192,21 +217,22 @@ class RRScheduler(Scheduler):
         self.processes = deque(self.processes)
 
     def enqueueProcesses(self, processorTime: int):
-        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+        while (
+            self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime
+        ):
             newProcess = self.processes.popleft()
             self.q.append(newProcess)
-    
+
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime(processorTime - 1)
         self.enqueueProcesses(processorTime)
-        
 
     def hasProcessesLeft(self):
         return len(self.processes) > 0
-    
+
     def hasProcessessInQueue(self):
         return len(self.q) > 0
-    
+
     def tryDispatchProcess(self, processorTime: int):
         if not self.hasProcessessInQueue() or self.q[0].arrivalTime > processorTime:
             return None
@@ -217,7 +243,7 @@ class RRScheduler(Scheduler):
 
     def requeueProcess(self, process: Process, processorTime: int):
         self.q.append(process)
-    
+
     def passIdleTime(self, processorTime: int):
         for process in self.q:
             processId = process.id
@@ -227,8 +253,9 @@ class RRScheduler(Scheduler):
     def initTimeQuantum(self):
         self.timeQuantum = initTimeQuantum()
 
+
 class PScheduler(Scheduler):
-    def __init__(self, numberOfProcesses: int, visualizer: Visualizer): 
+    def __init__(self, numberOfProcesses: int, visualizer: Visualizer):
         self.numberOfProcesses = numberOfProcesses
         self.processes = []
         self.q = []
@@ -243,21 +270,30 @@ class PScheduler(Scheduler):
         self.processes = deque(self.processes)
 
     def enqueueProcesses(self, processorTime: int):
-        while self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime:
+        while (
+            self.hasProcessesLeft() and self.processes[0].arrivalTime <= processorTime
+        ):
             newProcess = self.processes.popleft()
-            heapq.heappush(self.q, (-newProcess.priority, newProcess.arrivalTime, newProcess.id, newProcess))
+            heapq.heappush(
+                self.q,
+                (
+                    -newProcess.priority,
+                    newProcess.arrivalTime,
+                    newProcess.id,
+                    newProcess,
+                ),
+            )
 
-    
     def onProcessorTimeIncrease(self, processorTime: int):
         self.passIdleTime(processorTime - 1)
         self.enqueueProcesses(processorTime)
-        
+
     def hasProcessesLeft(self):
         return len(self.processes) > 0
-    
+
     def hasProcessessInQueue(self):
         return len(self.q) > 0
-    
+
     def tryDispatchProcess(self, processorTime: int):
         if not self.hasProcessessInQueue() or self.q[0][3].arrivalTime > processorTime:
             return None
@@ -265,19 +301,20 @@ class PScheduler(Scheduler):
         process.timeOfDispatch = processorTime
         processDispatch = ProcessDispatch(process, process.burstTime)
         return processDispatch
-    
+
     def passIdleTime(self, processorTime):
         for process in self.q:
             processId = process[2]
             self.visualizer.trackProcessAction(processId, processorTime, "W")
             process[3].idleTime += 1
 
+
 def initTimeQuantum():
-    value = int(input(f'Enter the time quantum for the scheduler: '))
+    value = int(input(f"Enter the time quantum for the scheduler: "))
     if value <= 0:
         raise Exception("The time quantum must be greater than 0")
     return value
-    
+
 
 def displayAlgoOptions():
     info = """
@@ -339,23 +376,21 @@ def displayAlgoOptions():
 """
     print(info)
 
+
 def tryGetAlgo():
-    value = int(input(f'Enter the number associated with the algorithm you would like to run: '))
+    value = int(
+        input(f"Enter the number associated with the algorithm you would like to run: ")
+    )
     if value < 1 or value > 5:
         raise Exception("The value you enter must be within 1 <= val <= 5")
     return value
 
-algoOptions = [
-    FCFSScheduler,
-    SPNScheduler,
-    SRTScheduler,
-    RRScheduler,
-    PScheduler
-]
+
+algoOptions = [FCFSScheduler, SPNScheduler, SRTScheduler, RRScheduler, PScheduler]
+
 
 def initAlgo():
     displayAlgoOptions()
     value = tryGetAlgo()
-    # print(value)
 
-    return algoOptions[value - 1]   
+    return algoOptions[value - 1]
